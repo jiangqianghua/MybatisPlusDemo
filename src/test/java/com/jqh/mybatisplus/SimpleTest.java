@@ -110,4 +110,62 @@ public class SimpleTest {
 //        DEBUG==>  Preparing: SELECT id,name,age,email,manager_id,create_time FROM user WHERE date_format(create_time,'%Y-%m-%d') =? AND manager_id IN (select id from user where name like '王%')
 //        DEBUG==> Parameters: 2019-02-14(String)
     }
+
+    //名字性王，且（年龄小于40或邮箱不为空）
+    //date_format(create_time,'%Y-%m-%d') and  manager_id in (select id from t_user where name like '王%')
+    @Test
+    public void selectByWrapper5(){
+        QueryWrapper<User> queryWrapper = new QueryWrapper<>();
+        queryWrapper.likeRight("name","王").and(wq->wq.lt("age",40).or().isNotNull("email"));
+        List<User> userList = userMapper.selectList(queryWrapper);
+        userList.forEach(System.out::println);
+
+//        DEBUG==>  Preparing: SELECT id,name,age,email,manager_id,create_time FROM user WHERE name LIKE ? AND ( age < ? OR email IS NOT NULL )
+//        DEBUG==> Parameters: 王%(String), 40(Integer)
+    }
+
+    @Test
+    //条件构造器查询
+    //name like ‘王%’ or (age<40 and age>20 and email is not null)
+    public void selectByWrapper6(){
+        QueryWrapper<User> queryWrapper= new QueryWrapper<User>();
+        //QueryWrapper<User> query= Wrappers.query();
+        //key为数据库的列名，不是实体中的属性名
+        queryWrapper.likeRight("name","王")
+                .or(wq->wq.lt("age",40).gt("age",20).isNotNull("email"));
+        List<User> userList = userMapper.selectList(queryWrapper);
+        userList.forEach(System.out::println);
+//
+//        DEBUG==>  Preparing: SELECT id,name,age,email,manager_id,create_time FROM user WHERE name LIKE ? OR ( age < ? AND age > ? AND email IS NOT NULL )
+//        DEBUG==> Parameters: 王%(String), 40(Integer), 20(Integer)
+    }
+
+    @Test
+    //条件构造器查询
+    //  (age<40 or email is not null) and name like ‘王%’
+    public void selectByWrapper7(){
+        QueryWrapper<User> queryWrapper= new QueryWrapper<User>();
+        //QueryWrapper<User> query= Wrappers.query();
+        //key为数据库的列名，不是实体中的属性名
+        queryWrapper.nested(wq->wq.lt("age",40).or().isNotNull("email"))
+                .likeRight("name","王");
+        List<User> userList = userMapper.selectList(queryWrapper);
+        userList.forEach(System.out::println);
+
+//        DEBUG==>  Preparing: SELECT id,name,age,email,manager_id,create_time FROM user WHERE ( age < ? OR email IS NOT NULL ) AND name LIKE ?
+//                DEBUG==> Parameters: 40(Integer), 王%(String)
+    }
+
+    @Test
+    //条件构造器查询
+    // age in (30 ,31,34,40)
+    public void selectByWrapper8(){
+        QueryWrapper<User> queryWrapper= new QueryWrapper<User>();
+        queryWrapper.in("age",Arrays.asList(31,31,34,35));//.last("limit 1");
+        List<User> userList = userMapper.selectList(queryWrapper);
+        userList.forEach(System.out::println);
+
+//        DEBUG==>  Preparing: SELECT id,name,age,email,manager_id,create_time FROM user WHERE age IN (?,?,?,?)
+//        DEBUG==> Parameters: 31(Integer), 31(Integer), 34(Integer), 35(Integer)
+    }
 }
