@@ -1,6 +1,14 @@
 spring:
   datasource:
     driver-class-name: com.mysql.cj.jdbc.Driver
-    url: jdbc:mysql://180.76.105.202:3306/mybatis_plus?useSSL=false&serverTimezone=GMT%2B8
+    url: jdbc:mysql://180.76.105.202:3306/mybatis_plus?characterEncoding=utf-8&useSSL=false&serverTimezone=GMT%2B8
     username: root
     password: Jiang123!
+
+logging:
+  level:
+    root: warn
+    com.jqh.mybatisplus.dao: trace
+  pattern:
+    console: '%p%m%n'
+
