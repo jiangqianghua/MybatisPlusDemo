@@ -1,0 +1,6 @@
+spring:
+  datasource:
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    url: jdbc:mysql://180.76.105.202:3306/mybatis_plus?useSSL=false&serverTimezone=GMT%2B8
+    username: root
+    password: Jiang123!
