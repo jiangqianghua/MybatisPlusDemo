@@ -1,6 +1,7 @@
 package com.jqh.mybatisplus;
 
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
+import com.baomidou.mybatisplus.core.toolkit.StringUtils;
 import com.jqh.mybatisplus.dao.UserMapper;
 import com.jqh.mybatisplus.entity.User;
 import org.junit.Test;
@@ -168,4 +169,107 @@ public class SimpleTest {
 //        DEBUG==>  Preparing: SELECT id,name,age,email,manager_id,create_time FROM user WHERE age IN (?,?,?,?)
 //        DEBUG==> Parameters: 31(Integer), 31(Integer), 34(Integer), 35(Integer)
     }
+
+
+    @Test
+    //条件构造器查询 select不列出全部字段
+    //name like ‘%雨%’ and age<40
+    public void selectByWrapperSelect() {
+        QueryWrapper<User> queryWrapper = new QueryWrapper<User>();
+        //QueryWrapper<User> query= Wrappers.query();
+        //select的列名如果和属性名不一致 可以这么写,但是没有查询的列映射到属性会变成null
+//        queryWrapper.select("id userId","name realName","email").like("name","雨").lt("age",40);
+        queryWrapper.select("id","name","email").like("name","雨").lt("age",40);
+        List<User> userList = userMapper.selectList(queryWrapper);
+        userList.forEach(System.out::println);
+    }
+
+    @Test
+    //条件构造器查询 select不列出全部字段
+    public void selectByWrapperSelect2() {
+        QueryWrapper<User> queryWrapper = new QueryWrapper<User>();
+        //QueryWrapper<User> query= Wrappers.query();
+        //key为数据库的列名，不是实体中的属性名
+        queryWrapper.select(User.class,tableFieldInfo -> !tableFieldInfo.getColumn().equals("create_time")&&
+                !tableFieldInfo.getColumn().equals("manager_id"));//查的时候排除create_time和manager_id
+
+        List<User> userList = userMapper.selectList(queryWrapper);
+        userList.forEach(System.out::println);
+    }
+
+    @Test
+    // 模仿登录使用name或者emial登录，谁不为空，就使用条件
+    public void selectByWrapperCondition() {
+        QueryWrapper<User> queryWrapper = new QueryWrapper<User>();
+        String name="王";
+        String email="";
+
+        queryWrapper.like(StringUtils.isNotEmpty(name),"name",name)
+                .like(StringUtils.isNotEmpty(email),"email",email);
+        List<User> userList = userMapper.selectList(queryWrapper);
+        userList.forEach(System.out::println);
+//        DEBUG==>  Preparing: SELECT id,name,age,email,manager_id,create_time FROM user WHERE name LIKE ?
+//                DEBUG==> Parameters: %王%(String)
+    }
+
+    @Test
+    //条件构造器查询
+    //name like ‘%雨%’ and age<40
+    public void selectByWrapperEntity() {
+
+        User whereUser =new User();
+        whereUser.setName("刘红雨"); //但默认这样写是按照=来查询，如果想要like，可以在实体类属性的@TableField 中设置condition = SqlCondition.LIKE
+        whereUser.setAge(32);
+
+        QueryWrapper<User> queryWrapper = new QueryWrapper<User>(whereUser);
+        //queryWrapper.like("name", "雨").lt("age", 40); //可以继续条件查询 不冲突
+        List<User> userList = userMapper.selectList(queryWrapper);
+        userList.forEach(System.out::println);
+
+//        DEBUG==>  Preparing: SELECT id,name,age,email,manager_id,create_time FROM user WHERE name=? AND age=?
+//        DEBUG==> Parameters: 刘红雨(String), 32(Integer)
+    }
+
+    @Test //allEq的作用可以把参数map中 key对应的value为null进行处理  true  xx is null  false  去除 xx
+    public void selectByWrapperAllEq() {
+        QueryWrapper<User> queryWrapper = new QueryWrapper<User>();
+        Map<String,Object> parms= new HashMap<String,Object>();
+        parms.put("name","王天风");
+        //parms.put("age",25);
+        parms.put("age",null);//sql里就是age IS NULL
+
+        queryWrapper.allEq(parms);
+       // queryWrapper.allEq(parms, false);  // 传入false，忽略掉值为null的
+        List<User> userList = userMapper.selectList(queryWrapper);
+        userList.forEach(System.out::println);
+    }
+
+
+    @Test
+    public void selectByWrapperAllEq3() {
+
+        QueryWrapper<User> queryWrapper = new QueryWrapper<User>();
+        Map<String,Object> parms= new HashMap<String,Object>();
+        parms.put("name","王天风");
+        //parms.put("age",25);
+        parms.put("age",null);
+        queryWrapper.allEq((k,v)->!k.equals("name"),parms);// 满足条件的（true）才会添加到条件中
+        List<User> userList = userMapper.selectList(queryWrapper);
+        userList.forEach(System.out::println);
+
+//        DEBUG==>  Preparing: SELECT id,name,age,email,manager_id,create_time FROM user WHERE age IS NULL
+    }
+
+    // 查询返回map，只带上select的值
+    @Test
+    public void selectByWrapperMaps(){
+        QueryWrapper<User> queryWrapper = new QueryWrapper<>();
+        queryWrapper.select("id","name");
+        List<Map<String,Object>> userList = userMapper.selectMaps(queryWrapper);
+        userList.forEach(System.out::println);
+
+        //DEBUG==>  Preparing: SELECT id,name FROM user
+    }
+
+
 }
